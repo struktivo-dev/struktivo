@@ -1,0 +1,1722 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Struktivo — Elementplanung für Betonfertigteile</title>
+<meta name="description" content="Struktivo ist Ihr Engineering- und Detailing-Partner für die Betonfertigteilindustrie — Elementplanung, Bewehrungsplanung und CNC-Daten.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --graphite:#151513;
+  --graphite-2:#1f1f1c;
+  --graphite-3:#2a2a26;
+  --concrete-light:#e4dfd3;
+  --concrete-mid:#c9c2b2;
+  --concrete-deep:#a39c8b;
+  --amber:#d69a3e;
+  --amber-deep:#b87f2b;
+  --steel:#5c6a70;
+  --ink:#171613;
+  --off-white:#f3efe5;
+  --line:rgba(21,21,19,0.14);
+  --line-light:rgba(243,239,229,0.16);
+  --font-display:'Big Shoulders Display',sans-serif;
+  --font-body:'IBM Plex Sans',sans-serif;
+  --font-mono:'IBM Plex Mono',monospace;
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--concrete-light);
+  color:var(--ink);
+  font-family:var(--font-body);
+  overflow-x:hidden;
+  cursor:none;
+}
+body.touch, body.touch *{cursor:auto !important;}
+img,svg{display:block;max-width:100%;}
+a{color:inherit;text-decoration:none;}
+ul{list-style:none;}
+button{font-family:inherit;border:none;background:none;color:inherit;cursor:none;}
+.container{width:min(1240px,90vw);margin:0 auto;}
+.eyebrow{
+  font-family:var(--font-mono);
+  font-size:12px;
+  letter-spacing:0.22em;
+  text-transform:uppercase;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  color:var(--amber-deep);
+  font-weight:500;
+}
+.eyebrow::before{
+  content:'';
+  width:22px;height:1px;
+  background:var(--amber-deep);
+  display:inline-block;
+}
+section.dark .eyebrow, .dark .eyebrow{color:var(--amber);}
+section.dark .eyebrow::before, .dark .eyebrow::before{background:var(--amber);}
+
+/* ===== custom cursor ===== */
+.cursor-dot,.cursor-ring{
+  position:fixed;top:0;left:0;
+  pointer-events:none;
+  z-index:9999;
+  transform:translate(-50%,-50%);
+  will-change:transform;
+}
+.cursor-dot{
+  width:6px;height:6px;
+  background:var(--amber);
+  border-radius:50%;
+}
+.cursor-ring{
+  width:38px;height:38px;
+  border:1px solid rgba(21,21,19,0.55);
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  transition:width .22s ease,height .22s ease,border-color .22s ease,background .22s ease;
+}
+.cursor-ring::before,.cursor-ring::after{
+  content:'';position:absolute;background:rgba(21,21,19,0.55);
+  transition:background .22s ease;
+}
+.cursor-ring::before{width:1px;height:8px;top:-4px;left:50%;transform:translateX(-50%);}
+.cursor-ring::after{width:8px;height:1px;left:-4px;top:50%;transform:translateY(-50%);}
+.cursor-label{
+  font-family:var(--font-mono);
+  font-size:9px;
+  letter-spacing:0.14em;
+  text-transform:uppercase;
+  opacity:0;
+  transform:scale(.6);
+  transition:opacity .18s ease,transform .18s ease;
+  color:var(--ink);
+  white-space:nowrap;
+}
+body.on-dark .cursor-ring{border-color:rgba(243,239,229,0.6);}
+body.on-dark .cursor-ring::before,body.on-dark .cursor-ring::after{background:rgba(243,239,229,0.6);}
+body.on-dark .cursor-label{color:var(--off-white);}
+.cursor-ring.hovering{
+  width:74px;height:74px;
+  background:var(--amber);
+  border-color:var(--amber);
+}
+.cursor-ring.hovering::before,.cursor-ring.hovering::after{display:none;}
+.cursor-ring.hovering .cursor-label{opacity:1;transform:scale(1);color:var(--ink);}
+.cursor-dot.hidden{opacity:0;}
+.cursor-coord{
+  position:fixed;top:0;left:0;
+  pointer-events:none;z-index:9999;
+  font-family:var(--font-mono);
+  font-size:10px;
+  letter-spacing:0.04em;
+  color:rgba(21,21,19,0.55);
+  transform:translate(16px,16px);
+  white-space:nowrap;
+  transition:color .3s ease,opacity .3s ease;
+}
+body.on-dark .cursor-coord{color:rgba(243,239,229,0.55);}
+.cursor-ring.hovering ~ .cursor-coord{opacity:0;}
+
+/* ===== scroll progress ===== */
+.progress-rail{
+  position:fixed;top:0;left:0;width:100%;height:3px;
+  background:rgba(21,21,19,0.08);
+  z-index:900;
+}
+.progress-fill{
+  height:100%;width:0%;
+  background:linear-gradient(90deg,var(--amber-deep),var(--amber));
+}
+
+/* ===== grain ===== */
+.grain{
+  position:fixed;inset:0;
+  z-index:850;
+  pointer-events:none;
+  opacity:0.045;
+  mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}
+
+/* ===== nav ===== */
+header.nav{
+  position:fixed;top:0;left:0;width:100%;
+  z-index:800;
+  padding:22px 0;
+  transition:background .35s ease,padding .35s ease,border-color .35s ease;
+  border-bottom:1px solid transparent;
+}
+header.nav.scrolled{
+  padding:14px 0;
+  background:rgba(228,223,211,0.86);
+  backdrop-filter:blur(10px);
+  border-color:var(--line);
+}
+header.nav .container{display:flex;align-items:center;justify-content:space-between;gap:20px;}
+.logo{
+  font-family:var(--font-display);
+  font-weight:800;
+  font-size:24px;
+  letter-spacing:0.01em;
+  display:flex;align-items:baseline;gap:8px;
+}
+.logo .mark{
+  width:11px;height:11px;background:var(--amber-deep);
+  display:inline-block;
+}
+.logo small{
+  font-family:var(--font-mono);
+  font-size:10px;font-weight:500;
+  letter-spacing:0.14em;
+  color:var(--steel);
+}
+.nav-right{display:flex;align-items:center;gap:26px;margin-left:auto;}
+.nav-links{display:flex;gap:30px;align-items:center;}
+.nav-links a.nav-link-item{
+  font-family:var(--font-mono);
+  font-size:12px;
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+  position:relative;
+  padding-bottom:3px;
+}
+.nav-links a.nav-link-item::after{
+  content:'';position:absolute;bottom:0;left:0;width:0;height:1px;
+  background:var(--ink);transition:width .25s ease;
+}
+.nav-links a.nav-link-item:hover::after{width:100%;}
+.lang-toggle{
+  display:flex;align-items:center;
+  border:1px solid var(--ink);
+  border-radius:999px;
+  overflow:hidden;
+  flex-shrink:0;
+}
+.lang-toggle button{
+  font-family:var(--font-mono);
+  font-size:11px;
+  letter-spacing:0.08em;
+  padding:7px 14px;
+  transition:background .25s ease,color .25s ease;
+}
+.lang-toggle button.active{background:var(--ink);color:var(--off-white);}
+.btn{
+  font-family:var(--font-mono);
+  font-size:12px;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  padding:12px 22px;
+  border:1px solid var(--ink);
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  position:relative;
+  overflow:hidden;
+  z-index:1;
+}
+.btn::before{
+  content:'';position:absolute;inset:0;
+  background:var(--ink);
+  transform:translateY(101%);
+  transition:transform .3s cubic-bezier(.65,0,.35,1);
+  z-index:-1;
+}
+.btn:hover{color:var(--off-white);}
+.btn:hover::before{transform:translateY(0);}
+.btn-solid{background:var(--ink);color:var(--off-white);}
+.btn-solid::before{background:var(--amber-deep);}
+.btn-solid:hover{color:var(--ink);}
+
+/* ===== hero ===== */
+.hero{
+  min-height:100vh;
+  position:relative;
+  display:flex;
+  align-items:center;
+  padding-top:110px;
+  overflow:hidden;
+  background:
+    radial-gradient(1100px 600px at 82% 20%, rgba(214,154,62,0.14), transparent 60%),
+    var(--concrete-light);
+}
+.hero .container{
+  display:grid;
+  grid-template-columns:1.05fr 0.85fr;
+  gap:40px;
+  align-items:center;
+}
+.hero-copy h1{
+  font-family:var(--font-display);
+  font-weight:800;
+  font-size:clamp(44px,6.6vw,96px);
+  line-height:0.95;
+  letter-spacing:-0.01em;
+  text-transform:uppercase;
+}
+.hero-copy h1 .line{overflow:hidden;display:block;}
+.hero-copy h1 span{
+  display:block;
+  transform:translateY(110%);
+  animation:riseUp .9s cubic-bezier(.2,.8,.2,1) forwards;
+}
+.hero-copy h1 .line:nth-child(1) span{animation-delay:.15s;}
+.hero-copy h1 .line:nth-child(2) span{animation-delay:.3s;color:var(--amber-deep);}
+@keyframes riseUp{to{transform:translateY(0);}}
+.hero-copy p{
+  margin-top:26px;
+  max-width:480px;
+  font-size:16.5px;
+  line-height:1.65;
+  color:#3c3a34;
+  opacity:0;
+  animation:fadeUp .8s ease forwards .75s;
+}
+.hero-cta{
+  margin-top:38px;
+  display:flex;
+  gap:16px;
+  align-items:center;
+  flex-wrap:wrap;
+  opacity:0;
+  animation:fadeUp .8s ease forwards .92s;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  margin-top:20px;
+  padding:8px 16px;
+  border:1px solid var(--amber-deep);
+  border-radius:999px;
+  font-family:var(--font-mono);
+  font-size:11.5px;
+  letter-spacing:0.02em;
+  color:var(--amber-deep);
+  opacity:0;
+  animation:fadeUp .8s ease forwards 1.08s;
+}
+.hero-badge::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--amber-deep);flex-shrink:0;}
+.hero-meta{
+  margin-top:34px;
+  display:flex;
+  gap:34px;
+  font-family:var(--font-mono);
+  font-size:11px;
+  letter-spacing:0.05em;
+  color:var(--steel);
+  opacity:0;
+  animation:fadeUp .8s ease forwards 1.22s;
+}
+.hero-meta b{display:block;color:var(--ink);font-size:20px;font-family:var(--font-display);font-weight:700;}
+
+/* hero visual: element plan being plotted */
+.hero-visual{position:relative;}
+.panel-wrap{
+  position:relative;
+  width:100%;
+  aspect-ratio:3/4;
+}
+.panel-wrap svg{width:100%;height:100%;overflow:visible;}
+.pour-fill{
+  transform:scaleY(0);
+  transform-origin:bottom;
+  animation:pour 1.6s cubic-bezier(.65,0,.35,1) forwards .3s;
+}
+@keyframes pour{to{transform:scaleY(1);}}
+.dim-label{font-family:var(--font-mono);font-size:10px;fill:var(--steel);letter-spacing:0.03em;}
+.rebar-line{stroke:rgba(21,21,19,0.16);stroke-width:1;}
+.anchor{fill:none;stroke:var(--ink);stroke-width:1.4;}
+
+.scroll-cue{
+  position:absolute;left:50%;bottom:38px;
+  transform:translateX(-50%);
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+  font-family:var(--font-mono);font-size:10px;letter-spacing:0.16em;
+  color:var(--steel);text-transform:uppercase;
+}
+.scroll-cue .bar{width:1px;height:46px;background:var(--line);position:relative;overflow:hidden;}
+.scroll-cue .bar::after{
+  content:'';position:absolute;top:-100%;left:0;width:100%;height:100%;
+  background:var(--amber-deep);
+  animation:scrollBar 1.8s ease-in-out infinite;
+}
+@keyframes scrollBar{
+  0%{top:-100%;}50%{top:0;}100%{top:100%;}
+}
+
+/* ===== marquee ===== */
+.marquee-section{
+  background:var(--ink);
+  color:var(--off-white);
+  padding:18px 0;
+  border-top:1px solid rgba(243,239,229,0.1);
+  border-bottom:1px solid rgba(243,239,229,0.1);
+  overflow:hidden;
+}
+.marquee-track{
+  display:flex;
+  width:max-content;
+  animation:scroll-marquee 34s linear infinite;
+}
+.marquee-track span{
+  font-family:var(--font-mono);
+  font-size:13px;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  padding:0 28px;
+  display:flex;
+  align-items:center;
+  gap:28px;
+  color:rgba(243,239,229,0.75);
+  white-space:nowrap;
+}
+.marquee-track span::after{content:'/';color:var(--amber);}
+@keyframes scroll-marquee{
+  from{transform:translateX(0);}
+  to{transform:translateX(-50%);}
+}
+
+/* ===== reveal utility ===== */
+[data-reveal]{
+  opacity:0;
+  transform:translateY(36px);
+  transition:opacity .9s cubic-bezier(.16,.8,.24,1), transform .9s cubic-bezier(.16,.8,.24,1);
+}
+[data-reveal].in-view{opacity:1;transform:translateY(0);}
+[data-reveal="fade"]{transform:none;}
+[data-reveal].in-view[data-reveal="fade"]{transform:none;}
+[data-reveal-delay="1"]{transition-delay:.1s;}
+[data-reveal-delay="2"]{transition-delay:.2s;}
+[data-reveal-delay="3"]{transition-delay:.3s;}
+[data-reveal-delay="4"]{transition-delay:.4s;}
+
+/* ===== statement (fixed: no overlap) ===== */
+.statement{padding:170px 0;}
+.statement .container{
+  display:grid;
+  grid-template-columns:0.55fr 1.45fr;
+  gap:60px;
+  align-items:start;
+}
+.statement-side{
+  border-left:1px solid var(--line);
+  padding-left:30px;
+  margin-top:34px;
+}
+.statement-side p{
+  font-size:15px;
+  line-height:1.75;
+  color:#4a4740;
+  margin-bottom:18px;
+}
+.statement-side p:last-child{margin-bottom:0;}
+.statement-right h2{
+  font-family:var(--font-display);
+  font-weight:700;
+  font-size:clamp(28px,3.4vw,44px);
+  line-height:1.18;
+  text-transform:uppercase;
+  letter-spacing:-0.01em;
+}
+.statement-right h2 em{
+  font-style:normal;
+  color:var(--amber-deep);
+  border-bottom:2px solid var(--amber-deep);
+}
+
+/* ===== process ===== */
+.process{
+  background:var(--graphite);
+  color:var(--off-white);
+  padding:140px 0 120px;
+}
+.process .head{max-width:640px;margin-bottom:80px;}
+.process .head h2{
+  font-family:var(--font-display);
+  font-weight:700;
+  font-size:clamp(34px,4.4vw,58px);
+  text-transform:uppercase;
+  line-height:1.02;
+  margin-top:18px;
+}
+.process-grid{display:grid;grid-template-columns:0.9fr 1.1fr;gap:70px;align-items:start;}
+.process-visual{
+  position:sticky;top:120px;
+  border:1px solid rgba(243,239,229,0.14);
+  padding:36px;
+  min-height:420px;
+  display:flex;flex-direction:column;justify-content:space-between;
+}
+.stage-readout{font-family:var(--font-mono);font-size:12px;letter-spacing:0.1em;color:var(--amber);}
+.stage-readout .big{
+  display:block;font-family:var(--font-display);font-size:96px;font-weight:800;
+  color:var(--off-white);line-height:1;margin-top:10px;
+}
+.stage-name{font-family:var(--font-mono);font-size:13px;letter-spacing:0.08em;text-transform:uppercase;color:rgba(243,239,229,0.6);margin-top:16px;}
+.stage-bar{height:2px;width:100%;background:rgba(243,239,229,0.12);margin-top:26px;position:relative;}
+.stage-bar-fill{height:100%;width:20%;background:var(--amber);transition:width .5s cubic-bezier(.4,0,.2,1);}
+.steps{border-top:1px solid rgba(243,239,229,0.12);}
+.step{
+  padding:38px 0;
+  border-bottom:1px solid rgba(243,239,229,0.12);
+  display:grid;grid-template-columns:70px 1fr;gap:24px;
+  opacity:0.35;
+  transition:opacity .4s ease;
+  cursor:none;
+}
+.step.active{opacity:1;}
+.step .num{font-family:var(--font-mono);font-size:14px;color:var(--amber);padding-top:4px;}
+.step h3{
+  font-family:var(--font-display);
+  font-weight:700;
+  font-size:26px;
+  text-transform:uppercase;
+  letter-spacing:0.01em;
+}
+.step p{margin-top:10px;font-size:14.5px;line-height:1.65;color:rgba(243,239,229,0.62);max-width:520px;}
+
+/* ===== capabilities ===== */
+.capabilities{padding:150px 0;}
+.section-head{
+  display:flex;justify-content:space-between;align-items:flex-end;
+  margin-bottom:70px;gap:40px;flex-wrap:wrap;
+}
+.section-head h2{
+  font-family:var(--font-display);font-weight:700;
+  font-size:clamp(34px,4.4vw,58px);text-transform:uppercase;
+  line-height:1.02;margin-top:16px;max-width:640px;
+}
+.section-head p{max-width:340px;font-size:14.5px;line-height:1.65;color:#4a4740;}
+.cap-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  border-top:1px solid var(--line);
+  border-left:1px solid var(--line);
+}
+.cap-card{
+  border-right:1px solid var(--line);
+  border-bottom:1px solid var(--line);
+  padding:38px 32px;
+  min-height:250px;
+  display:flex;flex-direction:column;justify-content:space-between;
+  transition:background .35s ease;
+  position:relative;
+  overflow:hidden;
+}
+.cap-card:hover{background:var(--ink);color:var(--off-white);}
+.cap-card:hover .cap-icon svg *{stroke:var(--amber);}
+.cap-card .cap-index{font-family:var(--font-mono);font-size:11px;color:var(--steel);}
+.cap-card:hover .cap-index{color:rgba(243,239,229,0.5);}
+.cap-icon{width:38px;height:38px;margin:20px 0 16px;}
+.cap-icon.lg{width:48px;height:48px;}
+.cap-icon svg{width:100%;height:100%;}
+.cap-icon svg *{stroke:var(--ink);transition:stroke .3s ease;fill:none;stroke-width:1.3;}
+.cap-card h3{font-family:var(--font-display);font-weight:700;font-size:21px;text-transform:uppercase;}
+.cap-card p{font-size:13.5px;line-height:1.6;margin-top:10px;color:#57544c;}
+.cap-card:hover p{color:rgba(243,239,229,0.65);}
+.arch-addon{
+  margin-top:2px;
+  border:1px solid var(--line);
+  border-top:1px dashed var(--amber-deep);
+  background:rgba(214,154,62,0.045);
+  padding:44px 40px 48px;
+}
+.arch-addon-head{max-width:640px;margin-bottom:38px;}
+.arch-addon-head h3{
+  font-family:var(--font-display);font-weight:700;
+  font-size:26px;text-transform:uppercase;margin-top:12px;letter-spacing:0.01em;
+}
+.arch-addon-head p{margin-top:10px;font-size:14px;line-height:1.6;color:#4a4740;}
+.arch-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:32px 36px;}
+.arch-item{display:flex;gap:14px;align-items:flex-start;}
+.arch-item .ico{width:26px;height:26px;flex-shrink:0;margin-top:2px;}
+.arch-item .ico svg{width:100%;height:100%;}
+.arch-item .ico svg *{stroke:var(--amber-deep);fill:none;stroke-width:1.4;stroke-linejoin:round;stroke-linecap:round;}
+.arch-item h4{font-family:var(--font-display);font-weight:700;font-size:15px;text-transform:uppercase;letter-spacing:0.01em;}
+.arch-item p{margin-top:5px;font-size:12.5px;line-height:1.55;color:#57544c;}
+@media (max-width:900px){
+  .arch-grid{grid-template-columns:1fr 1fr;}
+}
+@media (max-width:600px){
+  .arch-addon{padding:32px 24px;}
+  .arch-grid{grid-template-columns:1fr;}
+}
+
+/* ===== stats ===== */
+.stats{
+  background:var(--concrete-deep);
+  padding:110px 0;
+  border-top:1px solid var(--line);
+  border-bottom:1px solid var(--line);
+}
+.stats-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  gap:40px;
+}
+.stat b{
+  font-family:var(--font-display);
+  font-weight:800;
+  font-size:clamp(38px,4.2vw,60px);
+  display:block;
+  line-height:1;
+}
+.stat span{
+  font-family:var(--font-mono);
+  font-size:11.5px;
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+  color:#3c3a34;
+  display:block;
+  margin-top:12px;
+}
+.stat-cta{
+  display:flex;flex-direction:column;justify-content:center;
+  padding:22px;
+  border:1.5px dashed var(--amber-deep);
+  border-radius:6px;
+  text-decoration:none;
+  transition:background .3s ease;
+}
+.stat-cta:hover{background:rgba(214,154,62,0.14);}
+.stat-cta b{
+  font-family:var(--font-display);font-weight:700;
+  font-size:19px;text-transform:uppercase;line-height:1.2;
+  color:var(--ink);display:block;
+}
+.stat-cta .desc{
+  display:block;font-family:var(--font-mono);font-size:11.5px;
+  color:#4a4740;margin-top:10px;line-height:1.5;text-transform:none;letter-spacing:0.01em;
+}
+.stat-cta .stat-link{
+  display:block;margin-top:14px;
+  font-family:var(--font-mono);font-size:11.5px;letter-spacing:0.04em;
+  color:var(--amber-deep);font-weight:600;text-transform:none;
+}
+
+/* ===== why ===== */
+.why{padding:150px 0;}
+.why-grid{display:grid;grid-template-columns:0.9fr 1.1fr;gap:70px;align-items:center;}
+.why-list{border-top:1px solid var(--line);}
+.why-item{
+  padding:30px 0;border-bottom:1px solid var(--line);
+  display:grid;grid-template-columns:44px 1fr;gap:20px;
+}
+.why-item .ico{width:30px;height:30px;}
+.why-item .ico svg{width:100%;height:100%;}
+.why-item .ico svg *{stroke:var(--amber-deep);fill:none;stroke-width:1.4;}
+.why-item h4{font-family:var(--font-display);font-weight:700;font-size:20px;text-transform:uppercase;}
+.why-item p{margin-top:6px;font-size:14px;line-height:1.6;color:#4a4740;max-width:440px;}
+.why-visual{position:relative;border:1px solid var(--line);aspect-ratio:1/1;padding:30px;}
+.why-visual svg{width:100%;height:100%;}
+
+/* ===== expertise ===== */
+.expertise{background:var(--ink);color:var(--off-white);padding:150px 0;}
+.expertise .section-head h2{color:var(--off-white);}
+.expertise .section-head p{color:rgba(243,239,229,0.55);}
+.expertise .cap-grid{border-color:rgba(243,239,229,0.14);}
+.expertise .cap-card{border-color:rgba(243,239,229,0.14);}
+.expertise .cap-card:hover{background:rgba(243,239,229,0.06);}
+.expertise .cap-card h3{color:var(--off-white);}
+.expertise .cap-card p{color:rgba(243,239,229,0.55);}
+.expertise .cap-card .cap-index{color:rgba(243,239,229,0.4);}
+.expertise .cap-icon svg *{stroke:rgba(243,239,229,0.75);}
+.expertise .cap-card:hover .cap-icon svg *{stroke:var(--amber);}
+
+/* ===== cta ===== */
+.cta-section{
+  padding:170px 0 130px;
+  text-align:center;
+  position:relative;
+}
+.cta-section h2{
+  font-family:var(--font-display);font-weight:800;
+  font-size:clamp(36px,6.4vw,92px);
+  text-transform:uppercase;
+  line-height:0.98;
+  letter-spacing:-0.01em;
+}
+.cta-section h2 em{font-style:normal;color:var(--amber-deep);}
+.cta-section p{max-width:480px;margin:26px auto 0;font-size:15.5px;color:#4a4740;line-height:1.6;}
+.cta-buttons{margin-top:44px;display:flex;gap:16px;justify-content:center;}
+.route-visual{
+  margin-top:90px;
+  border:1px solid var(--line);
+  border-radius:6px;
+  padding:28px 30px 20px;
+  background:rgba(255,255,255,0.35);
+  text-align:left;
+}
+.route-visual svg{width:100%;height:auto;display:block;}
+.route-label{font-family:var(--font-mono);font-size:11px;letter-spacing:0.08em;text-transform:uppercase;fill:var(--steel);}
+.route-city{font-family:var(--font-display);font-size:15px;font-weight:700;fill:var(--ink);text-transform:uppercase;}
+
+/* ===== contact / footer ===== */
+footer{
+  background:var(--graphite);
+  color:var(--off-white);
+  padding:90px 0 0;
+}
+.footer-top{
+  display:grid;grid-template-columns:1.2fr 0.7fr 0.9fr;
+  gap:40px;padding-bottom:80px;border-bottom:1px solid rgba(243,239,229,0.12);
+}
+.footer-top h5{
+  font-family:var(--font-mono);font-size:11px;letter-spacing:0.1em;
+  text-transform:uppercase;color:rgba(243,239,229,0.5);margin-bottom:20px;
+}
+.footer-top ul li{margin-bottom:12px;font-size:14px;}
+.footer-top ul li a{opacity:0.85;transition:opacity .2s ease,padding-left .2s ease;display:inline-block;}
+.footer-top ul li a:hover{opacity:1;padding-left:6px;color:var(--amber);}
+.footer-brand .logo{color:var(--off-white);}
+.footer-brand p{margin-top:20px;font-size:14px;line-height:1.65;color:rgba(243,239,229,0.55);max-width:320px;}
+.footer-bottom{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:26px 0;font-family:var(--font-mono);font-size:11px;
+  letter-spacing:0.05em;color:rgba(243,239,229,0.4);
+  text-transform:uppercase;
+}
+
+@media (max-width:900px){
+  body{cursor:auto;}
+  .cursor-dot,.cursor-ring,.cursor-coord{display:none;}
+  .hero .container,.process-grid,.statement .container,.why-grid,.footer-top{grid-template-columns:1fr;}
+  .process-visual{position:relative;top:0;margin-bottom:40px;}
+  .cap-grid{grid-template-columns:1fr 1fr;}
+  .stats-grid{grid-template-columns:1fr 1fr;}
+  .nav-links a.nav-link-item{display:none;}
+  .footer-top{gap:50px;}
+}
+@media (max-width:600px){
+  .cap-grid,.stats-grid{grid-template-columns:1fr;}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:0.001ms !important;transition-duration:0.001ms !important;}
+}
+
+/* ===== loader ===== */
+body.loading{overflow:hidden;}
+.loader-overlay{
+  position:fixed;inset:0;z-index:9500;
+  background:var(--graphite);
+  color:var(--off-white);
+  display:flex;flex-direction:column;justify-content:space-between;
+  padding:34px clamp(20px,5vw,60px);
+  transition:opacity .8s cubic-bezier(.65,0,.35,1), filter .8s ease;
+}
+.loader-overlay.done{opacity:0;filter:blur(6px);pointer-events:none;}
+.loader-top{display:flex;justify-content:space-between;align-items:center;}
+.loader-logo{font-family:var(--font-display);font-weight:800;font-size:19px;letter-spacing:0.02em;display:flex;align-items:center;gap:8px;}
+.loader-logo .mark{width:9px;height:9px;background:var(--amber);display:inline-block;}
+.loader-pct-wrap{display:flex;align-items:center;gap:9px;font-family:var(--font-mono);font-size:14px;letter-spacing:0.06em;color:rgba(243,239,229,0.8);}
+.loader-spin{width:16px;height:16px;color:rgba(243,239,229,0.6);}
+.loader-spin svg{width:100%;height:100%;animation:loaderSpin 1.4s linear infinite;}
+@keyframes loaderSpin{to{transform:rotate(360deg);}}
+.loader-center{
+  position:absolute;left:50%;top:50%;
+  transform:translate(-50%,-50%);
+  width:min(760px,84vw);
+  opacity:0.92;
+  pointer-events:none;
+}
+.loader-center svg{width:100%;height:auto;display:block;}
+.loader-city{font-family:var(--font-mono);font-size:10px;letter-spacing:0.12em;fill:rgba(243,239,229,0.55);}
+.loader-bottom{display:flex;flex-direction:column;gap:16px;}
+.loader-list{display:flex;flex-direction:column;gap:8px;max-width:400px;}
+.loader-item{
+  display:flex;justify-content:space-between;gap:16px;
+  font-family:var(--font-mono);font-size:11.5px;letter-spacing:0.04em;
+  text-transform:uppercase;color:rgba(243,239,229,0.25);
+  transition:color .5s ease;
+}
+.loader-item span:last-child{color:rgba(243,239,229,0.18);transition:color .5s ease;}
+.loader-item.shown{color:rgba(243,239,229,0.85);}
+.loader-item.shown span:last-child{color:var(--amber);}
+.loader-bar-rail{width:100%;height:2px;background:rgba(243,239,229,0.14);}
+.loader-bar-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--amber-deep),var(--amber));}
+.loader-bottom-row{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10px;letter-spacing:0.14em;color:rgba(243,239,229,0.4);text-transform:uppercase;}
+@media (max-width:700px){
+  .loader-center{width:92vw;}
+  .loader-list{max-width:100%;}
+  .loader-item{font-size:10px;}
+}
+
+/* ===== market select ===== */
+.market-select{
+  position:fixed;inset:0;z-index:9400;
+  background:var(--graphite);
+  color:var(--off-white);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:40px 20px;
+  opacity:0;pointer-events:none;
+  transition:opacity .7s ease;
+}
+.market-select.active{opacity:1;pointer-events:auto;}
+.market-select.hide{opacity:0;pointer-events:none;filter:blur(6px);}
+.market-select-head{text-align:center;margin-bottom:56px;}
+.market-select-head .eyebrow{justify-content:center;color:var(--amber);}
+.market-select-head .eyebrow::before{background:var(--amber);}
+.market-select-head h2{
+  font-family:var(--font-display);font-weight:800;
+  font-size:clamp(30px,4.4vw,52px);text-transform:uppercase;
+  margin-top:16px;letter-spacing:-0.01em;
+}
+.market-select-head p{
+  margin-top:14px;font-size:14.5px;color:rgba(243,239,229,0.55);
+  max-width:440px;margin-left:auto;margin-right:auto;line-height:1.6;
+}
+.market-cards{display:flex;gap:26px;flex-wrap:wrap;justify-content:center;}
+.market-card{
+  width:280px;
+  border:1px solid rgba(243,239,229,0.18);
+  padding:34px 28px;
+  display:flex;flex-direction:column;align-items:flex-start;gap:16px;
+  transition:border-color .3s ease,background .3s ease,transform .3s ease;
+}
+.market-card:hover{border-color:var(--amber);background:rgba(243,239,229,0.04);transform:translateY(-4px);}
+.market-flag{width:52px;height:36px;border-radius:2px;overflow:hidden;display:block;}
+.market-flag svg{width:100%;height:100%;display:block;}
+.market-card h3{font-family:var(--font-display);font-weight:700;font-size:24px;text-transform:uppercase;}
+.market-card .std{font-family:var(--font-mono);font-size:11px;letter-spacing:0.05em;color:rgba(243,239,229,0.5);line-height:1.6;}
+.market-card .enter{
+  margin-top:6px;font-family:var(--font-mono);font-size:11px;letter-spacing:0.1em;
+  text-transform:uppercase;color:var(--amber);display:flex;align-items:center;gap:8px;
+}
+.market-card .enter::after{content:'→';transition:transform .25s ease;}
+.market-card:hover .enter::after{transform:translateX(4px);}
+
+/* ===== market-scoped content visibility ===== */
+.market-de-only,.market-in-only{}
+[hidden]{display:none !important;}
+body.market-in .lang-toggle{display:none;}
+.market-switch-btn{
+  font-family:var(--font-mono);font-size:11px;letter-spacing:0.06em;
+  text-transform:uppercase;padding:7px 12px;border:1px solid var(--ink);
+  border-radius:999px;display:flex;align-items:center;gap:6px;
+}
+.market-switch-btn .flag-mini{width:16px;height:12px;border-radius:1px;overflow:hidden;display:block;}
+.market-switch-btn .flag-mini svg{width:100%;height:100%;display:block;}
+</style>
+</head>
+<body class="loading">
+
+<div class="loader-overlay" id="loaderOverlay">
+  <div class="loader-top">
+    <div class="loader-logo"><span class="mark"></span>STRUKTIVO</div>
+    <div class="loader-pct-wrap"><span id="loaderPct">0</span>%<span class="loader-spin"><svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="6 4"/></svg></span></div>
+  </div>
+
+  <div class="loader-center">
+    <svg viewBox="0 0 800 420" fill="none">
+      <ellipse cx="400" cy="210" rx="300" ry="170" stroke="rgba(243,239,229,0.14)"/>
+      <ellipse cx="400" cy="210" rx="215" ry="170" stroke="rgba(243,239,229,0.1)"/>
+      <ellipse cx="400" cy="210" rx="115" ry="170" stroke="rgba(243,239,229,0.08)"/>
+      <line x1="100" y1="210" x2="700" y2="210" stroke="rgba(243,239,229,0.1)"/>
+      <line x1="400" y1="40" x2="400" y2="380" stroke="rgba(243,239,229,0.08)"/>
+      <circle cx="400" cy="210" r="304" fill="none" stroke="rgba(214,154,62,0.35)" stroke-width="1" stroke-dasharray="2 10">
+        <animateTransform attributeName="transform" type="rotate" from="0 400 210" to="360 400 210" dur="18s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="290" cy="150" r="4" fill="var(--amber)">
+        <animate attributeName="opacity" values="0.3;1;0.3" dur="2.2s" repeatCount="indefinite"/>
+      </circle>
+      <circle cx="500" cy="260" r="4" fill="var(--off-white)">
+        <animate attributeName="opacity" values="0.3;1;0.3" dur="2.2s" repeatCount="indefinite" begin="0.7s"/>
+      </circle>
+      <circle cx="440" cy="130" r="4" fill="var(--off-white)">
+        <animate attributeName="opacity" values="0.3;1;0.3" dur="2.2s" repeatCount="indefinite" begin="1.4s"/>
+      </circle>
+      <circle cx="340" cy="290" r="4" fill="var(--amber)">
+        <animate attributeName="opacity" values="0.3;1;0.3" dur="2.2s" repeatCount="indefinite" begin="0.35s"/>
+      </circle>
+      <path d="M290,150 Q400,90 440,130" stroke="rgba(243,239,229,0.25)" stroke-width="1" stroke-dasharray="3 5" fill="none"/>
+      <path d="M340,290 Q420,270 500,260" stroke="rgba(243,239,229,0.25)" stroke-width="1" stroke-dasharray="3 5" fill="none"/>
+    </svg>
+  </div>
+
+  <div class="loader-bottom">
+    <div class="loader-list" id="loaderList">
+      <div class="loader-item"><span>Precast Detailing</span><span>Shop Drawings</span></div>
+      <div class="loader-item"><span>Reinforcement Design</span><span>Bar Placement</span></div>
+      <div class="loader-item"><span>Formwork Layout</span><span>Mold Plans</span></div>
+      <div class="loader-item"><span>BIM Coordination</span><span>Allplan Precast</span></div>
+      <div class="loader-item"><span>CNC &amp; Bending Data</span><span>Export Ready</span></div>
+      <div class="loader-item"><span>Quality Assurance</span><span>Code Checked</span></div>
+      <div class="loader-item"><span>Production Data</span><span>ERP Sync</span></div>
+    </div>
+    <div class="loader-bar-rail"><div class="loader-bar-fill" id="loaderBarFill"></div></div>
+    <div class="loader-bottom-row"><span>Struktivo.co.in</span><span>Loading …</span></div>
+  </div>
+</div>
+
+<div class="market-select" id="marketSelect">
+  <div class="market-select-head">
+    <div class="eyebrow">SELECT YOUR REGION</div>
+    <h2>Where Do You Build?</h2>
+    <p>We tailor standards, terminology and language to where your factory operates.</p>
+  </div>
+  <div class="market-cards">
+    <button class="market-card hover-target" data-market="de" data-cursor="ENTER">
+      <span class="market-flag"><svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#151513"/><rect y="13.3" width="60" height="13.3" fill="#d00"/><rect y="26.6" width="60" height="13.4" fill="#ffce00"/></svg></span>
+      <h3>Germany</h3>
+      <span class="std">DIN 1045 · Eurocode 2<br>Deutsch / English</span>
+      <span class="enter">Enter Site</span>
+    </button>
+    <button class="market-card hover-target" data-market="in" data-cursor="ENTER">
+      <span class="market-flag"><svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#fff"/><rect width="60" height="13.3" fill="#ff9933"/><rect y="26.6" width="60" height="13.4" fill="#138808"/><circle cx="30" cy="20" r="4.2" fill="none" stroke="#000080" stroke-width="0.6"/><circle cx="30" cy="20" r="0.6" fill="#000080"/></svg></span>
+      <h3>India</h3>
+      <span class="std">IS 456:2000<br>English</span>
+      <span class="enter">Enter Site</span>
+    </button>
+  </div>
+</div>
+
+<div class="cursor-dot" id="cursorDot"></div>
+<div class="cursor-ring" id="cursorRing"><span class="cursor-label" id="cursorLabel"></span></div>
+<div class="cursor-coord" id="cursorCoord"></div>
+
+<div class="progress-rail"><div class="progress-fill" id="progressFill"></div></div>
+<div class="grain"></div>
+
+<header class="nav" id="siteNav">
+  <div class="container">
+    <a href="#top" class="logo"><span class="mark"></span>STRUKTIVO<small>.CO.IN</small></a>
+    <div class="nav-right">
+      <nav class="nav-links">
+        <a href="#capabilities" class="hover-target nav-link-item" data-i18n="nav.services">Leistungen</a>
+        <a href="#process" class="hover-target nav-link-item" data-i18n="nav.process">Ablauf</a>
+        <a href="#why" class="hover-target nav-link-item" data-i18n="nav.why">Warum wir</a>
+        <a href="#expertise" class="hover-target nav-link-item" data-i18n="nav.expertise">Expertise</a>
+        <div class="lang-toggle" id="langToggle">
+          <button data-lang="de" class="hover-target active">DE</button>
+          <button data-lang="en" class="hover-target">EN</button>
+        </div>
+        <button class="market-switch-btn hover-target" id="marketSwitchBtn" data-cursor="SWITCH">
+          <span class="flag-mini" id="marketSwitchFlag"><svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#151513"/><rect y="13.3" width="60" height="13.3" fill="#d00"/><rect y="26.6" width="60" height="13.4" fill="#ffce00"/></svg></span>
+          <span id="marketSwitchLabel">DE</span>
+        </button>
+        <a href="#contact" class="btn btn-solid hover-target" data-cursor="GO" data-i18n="nav.cta">Kontakt aufnehmen</a>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-copy">
+        <div class="eyebrow">
+          <span class="market-de-only" hidden data-i18n="hero.eyebrow">ELEMENTPLANUNG FÜR DEUTSCHE FERTIGTEILWERKE</span>
+          <span class="market-in-only" hidden>PRECAST DETAILING FOR INDIAN MANUFACTURERS &amp; EPCs</span>
+        </div>
+        <h1>
+          <span class="line"><span data-i18n="hero.h1.l1">DAS PLANUNGSBÜRO</span></span>
+          <span class="line"><span data-i18n="hero.h1.l2">HINTER IHREM WERK.</span></span>
+        </h1>
+        <p class="market-de-only" hidden data-i18n="hero.sub">Struktivo ist Ihr Engineering- und Detailing-Partner für die Betonfertigteilindustrie. Wir wandeln Ihre architektonischen und statischen Vorgaben in produktionsreife Elementpläne, Bewehrungspläne und CNC-Daten um — ohne dass Sie Ihr Planungsbüro personell aufstocken müssen.</p>
+        <p class="market-in-only" hidden>Struktivo is an engineering and detailing partner to Indian precast manufacturers, EPC contractors and structural consultants. We turn your architectural and structural input into production-ready element drawings, reinforcement drawings and CNC data — without you adding headcount to the drawing office.</p>
+        <div class="hero-cta">
+          <a href="#contact" class="btn btn-solid hover-target" data-cursor="TALK" data-i18n="hero.btn.talk">Kontakt aufnehmen</a>
+          <a href="#process" class="btn hover-target" data-cursor="VIEW" data-i18n="hero.btn.process">Ablauf ansehen</a>
+        </div>
+        <div class="hero-badge"><span data-i18n="hero.badge">Neuer Partner? Die erste Revision geht auf uns. Es gelten Bedingungen.</span></div>
+        <div class="hero-meta">
+          <div><b>8–10</b><span data-i18n="hero.meta1.label">Elementpläne / Tag</span></div>
+          <div><b>5</b><span data-i18n="hero.meta2.label">Detailing-Ingenieure</span></div>
+          <div><b>48h</b><span data-i18n="hero.meta3.label">Revisions-Durchlaufzeit</span></div>
+        </div>
+      </div>
+
+      <div class="hero-visual">
+        <div class="panel-wrap">
+          <svg viewBox="0 0 380 500" fill="none">
+            <rect x="20" y="20" width="340" height="460" stroke="rgba(21,21,19,0.4)" stroke-width="1.5"/>
+            <clipPath id="panelClip"><rect x="20" y="20" width="340" height="460"/></clipPath>
+            <g clip-path="url(#panelClip)">
+              <rect class="pour-fill" x="20" y="20" width="340" height="460" fill="url(#concreteGrad)"/>
+            </g>
+            <defs>
+              <linearGradient id="concreteGrad" x1="0" y1="480" x2="0" y2="20" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stop-color="#e2ddd0"/>
+                <stop offset="1" stop-color="#f1eee5"/>
+              </linearGradient>
+            </defs>
+            <g class="rebar-line">
+              <line x1="20" y1="105" x2="360" y2="105"/>
+              <line x1="20" y1="190" x2="360" y2="190"/>
+              <line x1="20" y1="275" x2="360" y2="275"/>
+              <line x1="20" y1="360" x2="360" y2="360"/>
+              <line x1="20" y1="445" x2="360" y2="445"/>
+              <line x1="105" y1="20" x2="105" y2="480"/>
+              <line x1="190" y1="20" x2="190" y2="480"/>
+              <line x1="275" y1="20" x2="275" y2="480"/>
+            </g>
+            <circle class="anchor" cx="70" cy="70" r="10"/>
+            <circle class="anchor" cx="310" cy="70" r="10"/>
+            <circle class="anchor" cx="70" cy="430" r="10"/>
+            <circle class="anchor" cx="310" cy="430" r="10"/>
+            <text x="46" y="115" class="dim-label" style="font-size:9px">WE‑04</text>
+            <text x="286" y="115" class="dim-label" style="font-size:9px">WE‑05</text>
+            <text x="46" y="380" class="dim-label" style="font-size:9px">POS 12.1</text>
+            <line x1="20" y1="0" x2="360" y2="0" stroke="rgba(21,21,19,0.4)" stroke-width="1"/>
+            <line x1="20" y1="-5" x2="20" y2="5" stroke="rgba(21,21,19,0.4)"/>
+            <line x1="360" y1="-5" x2="360" y2="5" stroke="rgba(21,21,19,0.4)"/>
+            <text x="150" y="-10" class="dim-label">3600 MM</text>
+            <line x1="378" y1="20" x2="378" y2="480" stroke="rgba(21,21,19,0.4)" stroke-width="1"/>
+            <text x="384" y="255" class="dim-label" transform="rotate(90 384 255)">4800 MM</text>
+            <circle r="4" fill="var(--amber-deep)">
+              <animateMotion dur="7s" repeatCount="indefinite"
+                path="M20,20 L360,20 L360,480 L20,480 Z"/>
+            </circle>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="scroll-cue">
+      <span data-i18n="hero.scroll">Scrollen — 01 / 06</span>
+      <div class="bar"></div>
+    </div>
+  </section>
+
+  <!-- MARQUEE -->
+  <div class="marquee-section">
+    <div class="marquee-track market-de-only" hidden>
+      <span>Elementplanung</span><span>Bewehrungsplanung</span><span>Schalplanung</span><span>BIM-Koordination</span><span>CNC &amp; BVBS Data</span><span>Stücklisten</span>
+      <span>Elementplanung</span><span>Bewehrungsplanung</span><span>Schalplanung</span><span>BIM-Koordination</span><span>CNC &amp; BVBS Data</span><span>Stücklisten</span>
+    </div>
+    <div class="marquee-track market-in-only" hidden>
+      <span>Precast Detailing</span><span>Reinforcement Detailing</span><span>Shuttering Drawings</span><span>BIM Coordination</span><span>CNC &amp; BBS Data</span><span>Bill of Quantities</span><span>Architectural Drawings</span>
+      <span>Precast Detailing</span><span>Reinforcement Detailing</span><span>Shuttering Drawings</span><span>BIM Coordination</span><span>CNC &amp; BBS Data</span><span>Bill of Quantities</span><span>Architectural Drawings</span>
+    </div>
+  </div>
+
+  <!-- STATEMENT -->
+  <section class="statement" id="about">
+    <div class="container">
+      <div data-reveal>
+        <div class="eyebrow" data-i18n="statement.eyebrow">FÜR WEN WIR ARBEITEN</div>
+        <div class="statement-side">
+          <p data-i18n="statement.p1">Unsere Ingenieure arbeiten mit Allplan Precast und DiCAD Strakon. Jeder Auftrag beginnt als Architektur- oder Statikunterlage und endet als nummerierter, produktionsreifer Elementplan.</p>
+          <p data-i18n="statement.p2">Jedes Projekt läuft unter NDA. Der Datenaustausch erfolgt über einen gesicherten Microsoft-Teams-Arbeitsbereich oder einen geschützten Google-Drive-Link — nie per offener E-Mail — der Zugriff wird mit Projektende geschlossen.</p>
+        </div>
+      </div>
+      <div class="statement-right" data-reveal data-reveal-delay="1">
+        <h2 data-i18n-html="statement.heading">Struktivo gießt keinen Beton. <em>Wir zeichnen die Pläne,</em> nach denen Ihr Werk fertigt — zusätzliche Ingenieurskapazität für Planungsbüros, die mit dem Auftragsbuch nicht mehr Schritt halten.</h2>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROCESS -->
+  <section class="process" id="process">
+    <div class="container">
+      <div class="head" data-reveal>
+        <div class="eyebrow" data-i18n="process.eyebrow">SO LÄUFT EIN AUFTRAG DURCH UNSER BÜRO</div>
+        <h2 data-i18n-html="process.heading">Vom Input zum Elementplan,<br>in fünf Schritten.</h2>
+      </div>
+
+      <div class="process-grid">
+        <div class="process-visual">
+          <div>
+            <div class="stage-readout"><span data-i18n="process.stagelabel">PHASE</span><span class="big" id="stageBig">01</span></div>
+            <div class="stage-name" id="stageName">Eingangsprüfung</div>
+          </div>
+          <div>
+            <div class="stage-bar"><div class="stage-bar-fill" id="stageBar"></div></div>
+          </div>
+        </div>
+
+        <div class="steps" id="stepsWrap">
+          <div class="step" data-stage="01" data-name-en="Input Review" data-name-de="Eingangsprüfung">
+            <div class="num">01</div>
+            <div>
+              <h3 data-i18n="step1.title">Prüfung</h3>
+              <p class="market-de-only" hidden data-i18n="step1.desc">Architektur- und Statikunterlagen — Pläne, Schnitte, Berechnungen — werden vor Modellierungsbeginn gegen DIN 1045 / Eurocode 2 und Ihren werkseigenen Detailing-Standard geprüft.</p>
+              <p class="market-in-only" hidden>Architectural and structural input — plans, sections, calculations — is checked against IS 456:2000 and your factory's own detailing standard before modeling starts.</p>
+            </div>
+          </div>
+          <div class="step" data-stage="02" data-name-en="Element Modeling" data-name-de="Elementmodellierung">
+            <div class="num">02</div>
+            <div><h3 data-i18n="step2.title">Modellierung</h3><p data-i18n="step2.desc">Wir erstellen ein 3D-Fertigteilmodell in Allplan Precast oder DiCAD Strakon — abgestimmt auf Ihr Produktionssystem, Ihre Anschlüsse und Toleranzen.</p></div>
+          </div>
+          <div class="step" data-stage="03" data-name-en="Element Plan &amp; Reinforcement Plan" data-name-de="Element- &amp; Bewehrungsplan">
+            <div class="num">03</div>
+            <div><h3 data-i18n="step3.title">Planung</h3><p data-i18n="step3.desc">Elementpläne und Bewehrungspläne entstehen mit Stücknummerierung, Einbauteilen und Anschlussdetails — bereit für die Produktion.</p></div>
+          </div>
+          <div class="step" data-stage="04" data-name-en="Coordination &amp; QS" data-name-de="Abstimmung &amp; Qualitätssicherung">
+            <div class="num">04</div>
+            <div><h3 data-i18n="step4.title">Abstimmung</h3><p data-i18n="step4.desc">Kollisionsprüfung, Rückfragen und Revisionsrunden laufen direkt mit Ihren Ingenieuren — jedes Blatt versioniert und freigegeben vor Übergabe.</p></div>
+          </div>
+          <div class="step" data-stage="05" data-name-en="Production Data" data-name-de="Produktionsdaten">
+            <div class="num">05</div>
+            <div>
+              <h3 data-i18n="step5.title">Freigabe</h3>
+              <p class="market-de-only" hidden data-i18n="step5.desc">CNC- und BVBS-Daten für die Bewehrungsbiegung, Schneidlisten und Stücklisten werden direkt in Ihr Produktions- und ERP-System exportiert.</p>
+              <p class="market-in-only" hidden>CNC data and bar bending schedules (BBS), cutting lists and bills of material are exported straight into your factory's production and ERP system.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CAPABILITIES -->
+  <section class="capabilities" id="capabilities">
+    <div class="container">
+      <div class="section-head" data-reveal>
+        <div>
+          <div class="eyebrow" data-i18n="capabilities.eyebrow">WAS WIR PLANEN</div>
+          <h2 data-i18n="capabilities.heading">Sechs Leistungen. Ein Planungsbüro.</h2>
+        </div>
+        <p data-i18n="capabilities.subtext">Jede Leistung folgt demselben Prüf- und QS-Prozess — abgestimmt auf die Software, Standards und Bauteilbibliothek Ihres Werks.</p>
+      </div>
+
+      <div class="cap-grid">
+        <div class="cap-card" data-reveal>
+          <span class="cap-index">01</span>
+          <div class="cap-icon"><svg viewBox="0 0 40 40"><rect x="6" y="6" width="28" height="28" stroke-linejoin="round"/><line x1="6" y1="20" x2="34" y2="20"/><line x1="20" y1="6" x2="20" y2="34"/></svg></div>
+          <div>
+            <h3 class="market-de-only" hidden>Elementplanung</h3>
+            <p class="market-de-only" hidden data-i18n="cap1.desc">Wand-, Decken- und Doppelwandpläne mit Stücknummerierung — bereit für das Schalbett.</p>
+            <h3 class="market-in-only" hidden>Precast Detailing</h3>
+            <p class="market-in-only" hidden>Wall, slab and double-wall element drawings with piece numbering, ready for the casting bed.</p>
+          </div>
+        </div>
+        <div class="cap-card" data-reveal data-reveal-delay="1">
+          <span class="cap-index">02</span>
+          <div class="cap-icon"><svg viewBox="0 0 40 40"><rect x="6" y="14" width="28" height="12" stroke-linejoin="round"/><line x1="6" y1="17" x2="34" y2="17"/><line x1="6" y1="20" x2="34" y2="20"/><line x1="6" y1="23" x2="34" y2="23"/></svg></div>
+          <div>
+            <h3 class="market-de-only" hidden>Bewehrungsplanung</h3>
+            <p class="market-de-only" hidden data-i18n="cap2.desc">Bewehrungszeichnungen und Stahllisten, geprüft nach DIN 1045-1 / Eurocode 2.</p>
+            <h3 class="market-in-only" hidden>Reinforcement Detailing</h3>
+            <p class="market-in-only" hidden>Reinforcement drawings and bar bending schedules (BBS), checked against IS 456:2000 tolerances.</p>
+          </div>
+        </div>
+        <div class="cap-card" data-reveal data-reveal-delay="2">
+          <span class="cap-index">03</span>
+          <div class="cap-icon"><svg viewBox="0 0 40 40"><rect x="7" y="7" width="26" height="26"/><rect x="13" y="13" width="14" height="14"/></svg></div>
+          <div>
+            <h3 class="market-de-only" hidden>Schalplanung</h3>
+            <p class="market-de-only" hidden data-i18n="cap3.desc">Schalungs- und Formenpläne, abgestimmt auf die vorhandene Schalungs- und Palettentechnik Ihres Werks.</p>
+            <h3 class="market-in-only" hidden>Shuttering &amp; Mold Drawings</h3>
+            <p class="market-in-only" hidden>Formwork and mold layout drawings matched to your factory's existing shuttering and pallet system.</p>
+          </div>
+        </div>
+        <div class="cap-card" data-reveal>
+          <span class="cap-index">04</span>
+          <div class="cap-icon"><svg viewBox="0 0 40 40"><path d="M8 32 L8 24 L16 24 L16 18 L24 18 L24 12 L32 12" stroke-linejoin="round"/></svg></div>
+          <div><h3 data-i18n="cap4.title">BIM-Koordination</h3><p data-i18n="cap4.desc">Ihr Allplan-Precast-Modell wird mit dem Architektur- und TGA-Modell abgeglichen und auf Kollisionen geprüft.</p></div>
+        </div>
+        <div class="cap-card" data-reveal data-reveal-delay="1">
+          <span class="cap-index">05</span>
+          <div class="cap-icon"><svg viewBox="0 0 40 40"><rect x="6" y="12" width="28" height="16" rx="1"/><circle cx="20" cy="20" r="5"/></svg></div>
+          <div>
+            <h3 class="market-de-only" hidden>CNC &amp; BVBS Data</h3>
+            <p class="market-de-only" hidden data-i18n="cap5.desc">Biegelisten und BVBS-Exportdateien, direkt einsetzbar an Ihren Biege- und CNC-Anlagen.</p>
+            <h3 class="market-in-only" hidden>CNC &amp; Bar Bending Data</h3>
+            <p class="market-in-only" hidden>Bending schedules (BBS) and CNC export data generated straight for your rebar-bending and CNC machines.</p>
+          </div>
+        </div>
+        <div class="cap-card" data-reveal data-reveal-delay="2">
+          <span class="cap-index">06</span>
+          <div class="cap-icon"><svg viewBox="0 0 40 40"><line x1="6" y1="30" x2="34" y2="30"/><line x1="10" y1="30" x2="10" y2="10"/><line x1="10" y1="10" x2="30" y2="16"/></svg></div>
+          <div>
+            <h3 class="market-de-only" hidden data-i18n="cap6.title">Stücklisten &amp; Mengen</h3>
+            <p class="market-de-only" hidden data-i18n="cap6.desc">Mengenermittlung und Stücklisten, direkt verknüpft mit jeder Planrevision — für Kalkulation und Einkauf.</p>
+            <h3 class="market-in-only" hidden>Bill of Quantities (BOQ)</h3>
+            <p class="market-in-only" hidden>Quantity take-offs and bills of material tied directly to each drawing revision for costing and procurement.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="arch-addon market-in-only" hidden data-reveal>
+        <div class="arch-addon-head">
+          <div class="eyebrow">ALSO AVAILABLE</div>
+          <h3>Architectural Design Services</h3>
+          <p>A natural add-on for clients who want design and detailing under one roof — modeled in AutoCAD, SketchUp and Revit.</p>
+        </div>
+        <div class="arch-grid">
+          <div class="arch-item">
+            <div class="ico"><svg viewBox="0 0 30 30"><rect x="4" y="4" width="22" height="22"/><line x1="4" y1="14" x2="26" y2="14"/><line x1="14" y1="14" x2="14" y2="26"/></svg></div>
+            <div><h4>Concept &amp; Layout Design</h4><p>Space planning and floor layouts, from client brief to a buildable concept.</p></div>
+          </div>
+          <div class="arch-item">
+            <div class="ico"><svg viewBox="0 0 30 30"><rect x="4" y="4" width="22" height="22"/><line x1="9" y1="9" x2="21" y2="21"/><line x1="9" y1="21" x2="21" y2="9"/></svg></div>
+            <div><h4>Working Drawings</h4><p>Plans, elevations and sections detailed for construction and municipal submission.</p></div>
+          </div>
+          <div class="arch-item">
+            <div class="ico"><svg viewBox="0 0 30 30"><path d="M15 3 L27 9 V21 L15 27 L3 21 V9 Z"/><path d="M3 9 L15 15 L27 9"/><line x1="15" y1="15" x2="15" y2="27"/></svg></div>
+            <div><h4>3D Visualization &amp; Walkthroughs</h4><p>Rendered views and walkthroughs to sell the design before it's built.</p></div>
+          </div>
+          <div class="arch-item">
+            <div class="ico"><svg viewBox="0 0 30 30"><rect x="4" y="14" width="22" height="12"/><path d="M8 14 V9 C8 6 10 4 13 4 H17 C20 4 22 6 22 9 V14"/></svg></div>
+            <div><h4>Interior Layouts</h4><p>Room-level layouts and finish schedules for residential and commercial fit-outs.</p></div>
+          </div>
+          <div class="arch-item">
+            <div class="ico"><svg viewBox="0 0 30 30"><rect x="5" y="5" width="20" height="20" rx="1"/><path d="M10 15 L13.5 18.5 L20 11"/></svg></div>
+            <div><h4>Municipal &amp; Approval Drawings</h4><p>Submission sets prepared to local authority format and approval requirements.</p></div>
+          </div>
+          <div class="arch-item">
+            <div class="ico"><svg viewBox="0 0 30 30"><line x1="3" y1="26" x2="27" y2="26"/><path d="M8 26 V16 L12 10 L16 16 V26"/><path d="M19 26 V19 L22 15 L25 19 V26"/></svg></div>
+            <div><h4>Site &amp; Landscape Plans</h4><p>Site layout, grading and landscape drawings coordinated with the building design.</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <section class="stats">
+    <div class="container">
+      <div class="stats-grid">
+        <div class="stat" data-reveal><b>8–10</b><span data-i18n="stats.tile1.label">Elementpläne / Tag</span></div>
+        <div class="stat" data-reveal data-reveal-delay="1"><b data-count="5">0</b><span data-i18n="stats.tile2.label">Detailing-Ingenieure</span></div>
+        <div class="stat" data-reveal data-reveal-delay="2"><b data-count="48" data-suffix="h">0</b><span data-i18n="stats.tile3.label">Revisions-Durchlaufzeit</span></div>
+        <a href="#contact" class="stat stat-cta hover-target" data-cursor="TALK" data-reveal data-reveal-delay="3">
+          <b data-i18n="stats.tile4.title">Werden Sie unser erster Partner</b>
+          <span class="desc" data-i18n="stats.tile4.desc">Wir nehmen jetzt Pilotprojekte an — sprechen Sie mit uns.</span>
+          <span class="stat-link" data-i18n="stats.tile4.link">Kontakt aufnehmen →</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHY -->
+  <section class="why" id="why">
+    <div class="container">
+      <div class="why-grid">
+        <div>
+          <div class="eyebrow" data-reveal data-i18n="why.eyebrow">WARUM WERKE MIT UNS ARBEITEN</div>
+          <div class="why-list">
+            <div class="why-item" data-reveal>
+              <div class="ico"><svg viewBox="0 0 30 30"><rect x="5" y="5" width="20" height="20"/><line x1="5" y1="15" x2="25" y2="15"/></svg></div>
+              <div><h4 data-i18n="why1.title">Zusätzliche Planungskapazität nach Bedarf</h4><p data-i18n="why1.desc">Auftragsspitzen abfangen, ohne ein zweites Planungsteam aufzubauen oder einzuarbeiten.</p></div>
+            </div>
+            <div class="why-item" data-reveal data-reveal-delay="1">
+              <div class="ico"><svg viewBox="0 0 30 30"><path d="M6 24 L6 16 L14 16 L14 10 L22 10 L22 24 Z"/></svg></div>
+              <div><h4 data-i18n="why2.title">Geschult in Allplan Precast &amp; Strakon</h4><p data-i18n="why2.desc">Unsere Ingenieure arbeiten direkt in der Software und den Zeichnungsvorlagen Ihres Werks.</p></div>
+            </div>
+            <div class="why-item" data-reveal data-reveal-delay="2">
+              <div class="ico"><svg viewBox="0 0 30 30"><circle cx="15" cy="15" r="10"/><path d="M10 15 L13 18 L20 11"/></svg></div>
+              <div>
+                <h4 class="market-de-only" hidden data-i18n="why3.title">Qualitätssicherung nach DIN / Eurocode</h4>
+                <p class="market-de-only" hidden data-i18n="why3.desc">Jeder Element- und Bewehrungsplan wird geprüft und freigegeben, bevor er Ihre Produktion erreicht.</p>
+                <h4 class="market-in-only" hidden>IS Code Aligned QS</h4>
+                <p class="market-in-only" hidden>Every element drawing and reinforcement drawing is checked against IS 456:2000 and signed off before it reaches your floor.</p>
+              </div>
+            </div>
+            <div class="why-item" data-reveal data-reveal-delay="3">
+              <div class="ico"><svg viewBox="0 0 30 30"><rect x="4" y="12" width="14" height="10"/><path d="M18 15 H24 L26 19 V22 H18 Z"/><circle cx="9" cy="24" r="2"/><circle cx="22" cy="24" r="2"/></svg></div>
+              <div>
+                <h4 class="market-de-only" hidden data-i18n="why4.title">Überschneidende Arbeitszeiten</h4>
+                <p class="market-de-only" hidden data-i18n="why4.desc">Die Arbeitszeiten zwischen Indien und Deutschland überschneiden sich ausreichend für Rückfragen und Revisionen am gleichen Tag.</p>
+                <h4 class="market-in-only" hidden>Same Time Zone, Faster Turnaround</h4>
+                <p class="market-in-only" hidden>No cross-border lag — queries, approvals and revisions move in real time within Indian working hours.</p>
+              </div>
+            </div>
+            <div class="why-item" data-reveal data-reveal-delay="4">
+              <div class="ico"><svg viewBox="0 0 30 30"><circle cx="15" cy="10" r="5"/><path d="M5 25 C5 18 9 15 15 15 C21 15 25 18 25 25"/></svg></div>
+              <div>
+                <h4 class="market-de-only" hidden data-i18n="why5.title">Erfahrene Zeichner &amp; Modellierer</h4>
+                <p class="market-de-only" hidden data-i18n="why5.desc">Jeder Zeichner und Modellierer in unserem Team bringt mehr als 5 Jahre Erfahrung in der Fertigteilplanung mit und ist mit deutschen Normen, Zeichenkonventionen und Werksstandards bestens vertraut — Sie übergeben ein Projekt, kein Trainingsprogramm.</p>
+                <h4 class="market-in-only" hidden>Experienced Drafters &amp; Modelers</h4>
+                <p class="market-in-only" hidden>Every drafter and modeler on our team brings 5+ years of precast detailing experience and deep familiarity with Indian standards (IS 456, IS 15916) and factory workflows — you hand off a project, not a training program.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="why-visual" data-reveal>
+          <svg viewBox="0 0 400 400" fill="none">
+            <rect x="30" y="30" width="340" height="340" stroke="var(--line)"/>
+            <g stroke="rgba(21,21,19,0.18)">
+              <line x1="30" y1="115" x2="370" y2="115"/>
+              <line x1="30" y1="200" x2="370" y2="200"/>
+              <line x1="30" y1="285" x2="370" y2="285"/>
+              <line x1="115" y1="30" x2="115" y2="370"/>
+              <line x1="200" y1="30" x2="200" y2="370"/>
+              <line x1="285" y1="30" x2="285" y2="370"/>
+            </g>
+            <rect x="70" y="70" width="90" height="130" fill="var(--concrete-mid)" opacity="0.6"/>
+            <rect x="200" y="150" width="130" height="80" fill="var(--amber)" opacity="0.85"/>
+            <rect x="115" y="240" width="150" height="100" stroke="var(--ink)" stroke-width="1.4"/>
+            <circle cx="200" cy="200" r="3" fill="var(--ink)"/>
+            <text x="205" y="196" class="dim-label" fill="var(--steel)" style="font-size:10px" data-i18n="why.tolerance">TOLERANZ ±2MM</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EXPERTISE -->
+  <section class="expertise" id="expertise">
+    <div class="container">
+      <div class="section-head" data-reveal>
+        <div>
+          <div class="eyebrow" data-i18n="expertise.eyebrow">EXPERTISE-BEREICHE</div>
+          <h2 data-i18n="expertise.heading">Wofür wir aufgestellt sind.</h2>
+        </div>
+        <p data-i18n="expertise.subtext">Beispielhafte Planungsumfänge, für die wir aufgestellt sind — präzise Geometrie, saubere Bewehrung, produktionsreife Ergebnisse.</p>
+      </div>
+      <div class="cap-grid">
+        <div class="cap-card" data-reveal>
+          <span class="cap-index">01</span>
+          <div class="cap-icon lg"><svg viewBox="0 0 48 48"><rect x="6" y="6" width="36" height="36"/><line x1="6" y1="24" x2="42" y2="24"/><line x1="24" y1="6" x2="24" y2="42"/><circle cx="14" cy="14" r="2"/><circle cx="34" cy="14" r="2"/></svg></div>
+          <div><h3 data-i18n="exp1.title">Wand- &amp; Doppelwandelemente</h3><p data-i18n="exp1.desc">Präzise Geometrie und Stücknummerierung für tragende Wand- und Sandwichelemente.</p></div>
+        </div>
+        <div class="cap-card" data-reveal data-reveal-delay="1">
+          <span class="cap-index">02</span>
+          <div class="cap-icon lg"><svg viewBox="0 0 48 48"><rect x="6" y="16" width="36" height="16"/><line x1="6" y1="20" x2="42" y2="20"/><line x1="6" y1="24" x2="42" y2="24"/><line x1="6" y1="28" x2="42" y2="28"/></svg></div>
+          <div><h3 data-i18n="exp2.title">Bewehrungsdetails</h3><p data-i18n="exp2.desc">Saubere, normgeprüfte Bewehrungsführung und Stahllisten für jedes Element.</p></div>
+        </div>
+        <div class="cap-card" data-reveal data-reveal-delay="2">
+          <span class="cap-index">03</span>
+          <div class="cap-icon lg"><svg viewBox="0 0 48 48"><rect x="10" y="6" width="8" height="36"/><rect x="30" y="16" width="12" height="8"/></svg></div>
+          <div><h3 data-i18n="exp3.title">Stützen &amp; Träger</h3><p data-i18n="exp3.desc">Statische Fertigteile, detailliert nach Spannweite, Last und Anschluss.</p></div>
+        </div>
+        <div class="cap-card" data-reveal>
+          <span class="cap-index">04</span>
+          <div class="cap-icon lg"><svg viewBox="0 0 48 48"><path d="M8 40 L8 32 L18 32 L18 24 L28 24 L28 16 L40 16" stroke-linejoin="round"/></svg></div>
+          <div><h3 data-i18n="exp4.title">Fertigteiltreppen</h3><p data-i18n="exp4.desc">Lauf- und Podestgeometrie mit exakter Steigungs- und Auftrittstoleranz.</p></div>
+        </div>
+        <div class="cap-card" data-reveal data-reveal-delay="1">
+          <span class="cap-index">05</span>
+          <div class="cap-icon lg"><svg viewBox="0 0 48 48"><rect x="8" y="8" width="32" height="32"/><rect x="14" y="14" width="20" height="20"/></svg></div>
+          <div><h3 data-i18n="exp5.title">Schalungspläne</h3><p data-i18n="exp5.desc">Schalungs- und Palettenpläne, abgestimmt auf Ihre vorhandene Technik.</p></div>
+        </div>
+        <div class="cap-card" data-reveal data-reveal-delay="2">
+          <span class="cap-index">06</span>
+          <div class="cap-icon lg"><svg viewBox="0 0 48 48"><line x1="8" y1="38" x2="40" y2="38"/><line x1="12" y1="38" x2="12" y2="12"/><line x1="12" y1="12" x2="36" y2="20"/><line x1="12" y1="20" x2="30" y2="26"/></svg></div>
+          <div><h3 data-i18n="exp6.title">Fassaden- &amp; Sonnenschutzelemente</h3><p data-i18n="exp6.desc">Architektonische Fertigteile nach Ansichts- und Oberflächenplan.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section" id="quote">
+    <div class="container">
+      <div data-reveal><h2 data-i18n-html="cta.heading">Schicken Sie uns den Input.<br>Erhalten Sie einen <em>Elementplan.</em></h2></div>
+      <div data-reveal data-reveal-delay="1"><p data-i18n="cta.subtext">Ihre erste Revision geht auf uns — ein risikofreier Einstieg in die Zusammenarbeit. Es gelten Bedingungen.</p></div>
+      <div class="cta-buttons" data-reveal data-reveal-delay="2">
+        <a href="#contact" class="btn btn-solid hover-target" data-cursor="TALK" data-i18n="cta.button">Kontakt aufnehmen</a>
+      </div>
+
+      <div class="route-visual market-de-only" hidden data-reveal data-reveal-delay="3">
+        <svg viewBox="0 0 900 220" fill="none">
+          <path id="flightPath" d="M120,150 Q450,-10 770,120" stroke="rgba(21,21,19,0.28)" stroke-width="1.5" stroke-dasharray="5 6" fill="none"/>
+          <circle cx="120" cy="150" r="5" fill="var(--amber-deep)"/>
+          <circle cx="120" cy="150" r="12" fill="none" stroke="var(--amber-deep)" stroke-width="1" opacity="0.5">
+            <animate attributeName="r" values="8;20;8" dur="2.6s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0.6;0;0.6" dur="2.6s" repeatCount="indefinite"/>
+          </circle>
+          <text x="120" y="180" text-anchor="middle" class="route-city" data-i18n="route.germany">DEUTSCHLAND</text>
+          <circle cx="770" cy="120" r="5" fill="var(--ink)"/>
+          <circle cx="770" cy="120" r="12" fill="none" stroke="var(--ink)" stroke-width="1" opacity="0.4">
+            <animate attributeName="r" values="8;20;8" dur="2.6s" repeatCount="indefinite" begin="1.3s"/>
+            <animate attributeName="opacity" values="0.5;0;0.5" dur="2.6s" repeatCount="indefinite" begin="1.3s"/>
+          </circle>
+          <text x="770" y="150" text-anchor="middle" class="route-city" data-i18n="route.india">INDIEN</text>
+          <g>
+            <path d="M0,-4 L9,0 L0,4 L2,0 Z" fill="var(--amber-deep)">
+              <animateMotion dur="4.5s" repeatCount="indefinite" rotate="auto" path="M120,150 Q450,-10 770,120"/>
+            </path>
+          </g>
+          <text x="450" y="30" text-anchor="middle" class="route-label">STRUKTIVO CONNECT</text>
+        </svg>
+      </div>
+
+      <div class="route-visual market-in-only" hidden data-reveal data-reveal-delay="3">
+        <svg viewBox="0 0 900 260" fill="none">
+          <circle cx="330" cy="150" r="5" fill="var(--amber-deep)"/>
+          <circle cx="330" cy="150" r="13" fill="none" stroke="var(--amber-deep)" stroke-width="1" opacity="0.5">
+            <animate attributeName="r" values="8;22;8" dur="2.6s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0.6;0;0.6" dur="2.6s" repeatCount="indefinite"/>
+          </circle>
+          <text x="330" y="180" text-anchor="middle" class="route-city">BENGALURU (HQ)</text>
+
+          <path d="M330,150 Q400,60 560,60" stroke="rgba(21,21,19,0.25)" stroke-width="1.2" stroke-dasharray="4 5" fill="none"/>
+          <circle cx="560" cy="60" r="4" fill="var(--ink)"/>
+          <text x="560" y="42" text-anchor="middle" class="route-city">MUMBAI</text>
+
+          <path d="M330,150 Q470,120 650,140" stroke="rgba(21,21,19,0.25)" stroke-width="1.2" stroke-dasharray="4 5" fill="none"/>
+          <circle cx="650" cy="140" r="4" fill="var(--ink)"/>
+          <text x="650" y="122" text-anchor="middle" class="route-city">HYDERABAD</text>
+
+          <path d="M330,150 Q400,210 500,220" stroke="rgba(21,21,19,0.25)" stroke-width="1.2" stroke-dasharray="4 5" fill="none"/>
+          <circle cx="500" cy="220" r="4" fill="var(--ink)"/>
+          <text x="500" y="240" text-anchor="middle" class="route-city">CHENNAI</text>
+
+          <path d="M330,150 Q280,70 260,20" stroke="rgba(21,21,19,0.25)" stroke-width="1.2" stroke-dasharray="4 5" fill="none"/>
+          <circle cx="260" cy="20" r="4" fill="var(--ink)"/>
+          <text x="260" y="14" text-anchor="middle" class="route-city">PUNE</text>
+
+          <path d="M330,150 Q200,110 130,60" stroke="rgba(21,21,19,0.25)" stroke-width="1.2" stroke-dasharray="4 5" fill="none"/>
+          <circle cx="130" cy="60" r="4" fill="var(--ink)"/>
+          <text x="130" y="42" text-anchor="middle" class="route-city">DELHI NCR</text>
+
+          <g>
+            <circle r="3" fill="var(--amber-deep)">
+              <animateMotion dur="3.2s" repeatCount="indefinite" path="M330,150 Q400,60 560,60"/>
+            </circle>
+          </g>
+          <g>
+            <circle r="3" fill="var(--amber-deep)">
+              <animateMotion dur="3.6s" repeatCount="indefinite" begin="0.4s" path="M330,150 Q470,120 650,140"/>
+            </circle>
+          </g>
+          <text x="450" y="255" text-anchor="middle" class="route-label">PAN-INDIA DELIVERY NETWORK</text>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer id="contact">
+  <div class="container">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <a href="#top" class="logo hover-target"><span class="mark"></span>STRUKTIVO<small>.CO.IN</small></a>
+        <p class="market-de-only" hidden data-i18n="footer.tagline">Ihr Engineering- und Detailing-Partner für die Betonfertigteilindustrie. Vom Input zum Elementplan — in Ihrer Vorlage.</p>
+        <p class="market-in-only" hidden>Precast detailing and engineering partner to Indian manufacturers and EPCs. Input to element drawing, on your template.</p>
+      </div>
+      <div>
+        <h5 data-i18n="footer.sitemap_label">Übersicht</h5>
+        <ul>
+          <li><a href="#capabilities" class="hover-target" data-i18n="nav.services">Leistungen</a></li>
+          <li><a href="#process" class="hover-target" data-i18n="nav.process">Ablauf</a></li>
+          <li><a href="#why" class="hover-target" data-i18n="nav.why">Warum wir</a></li>
+          <li><a href="#expertise" class="hover-target" data-i18n="nav.expertise">Expertise</a></li>
+        </ul>
+      </div>
+      <div>
+        <h5 data-i18n="footer.contact_label">Kontakt</h5>
+        <ul>
+          <li><a href="mailto:projects@struktivo.co.in" class="hover-target">projects@struktivo.co.in</a></li>
+          <li><a href="#" class="hover-target" data-i18n="footer.hours">Mo–Fr, 09:00–18:00 Uhr IST</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 Struktivo Precast Pvt. Ltd.</span>
+      <span>Struktivo.co.in</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ---------- loader ----------
+(function(){
+  const pctEl = document.getElementById('loaderPct');
+  const barEl = document.getElementById('loaderBarFill');
+  const overlay = document.getElementById('loaderOverlay');
+  const marketSelect = document.getElementById('marketSelect');
+  const items = document.querySelectorAll('.loader-item');
+  let pct = 0;
+  function step(){
+    pct += Math.random()*8 + 4;
+    if(pct >= 100){ pct = 100; }
+    pctEl.textContent = Math.floor(pct);
+    barEl.style.width = pct + '%';
+    const shownCount = Math.round((pct/100) * items.length);
+    items.forEach((it,i)=>{ it.classList.toggle('shown', i < shownCount); });
+    if(pct < 100){
+      setTimeout(step, 90 + Math.random()*140);
+    } else {
+      setTimeout(()=>{
+        overlay.classList.add('done');
+        marketSelect.classList.add('active');
+        setTimeout(()=>{ overlay.remove(); }, 850);
+      }, 450);
+    }
+  }
+  setTimeout(step, 250);
+})();
+
+// ---------- market selection ----------
+const flagSVG = {
+  de: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#151513"/><rect y="13.3" width="60" height="13.3" fill="#d00"/><rect y="26.6" width="60" height="13.4" fill="#ffce00"/></svg>',
+  in: '<svg viewBox="0 0 60 40"><rect width="60" height="40" fill="#fff"/><rect width="60" height="13.3" fill="#ff9933"/><rect y="26.6" width="60" height="13.4" fill="#138808"/><circle cx="30" cy="20" r="4.2" fill="none" stroke="#000080" stroke-width="0.6"/><circle cx="30" cy="20" r="0.6" fill="#000080"/></svg>'
+};
+function setMarket(market){
+  document.body.classList.remove('market-de','market-in');
+  document.body.classList.add('market-'+market);
+  document.querySelectorAll('.market-de-only').forEach(el=>{ el.hidden = market!=='de'; });
+  document.querySelectorAll('.market-in-only').forEach(el=>{ el.hidden = market!=='in'; });
+  const flagEl = document.getElementById('marketSwitchFlag');
+  const labelEl = document.getElementById('marketSwitchLabel');
+  if(flagEl) flagEl.innerHTML = flagSVG[market];
+  if(labelEl) labelEl.textContent = market==='de' ? 'DE' : 'IN';
+  if(market==='in'){ setLanguage('en'); } else { setLanguage('de'); }
+}
+document.querySelectorAll('.market-card').forEach(card=>{
+  card.addEventListener('click',()=>{
+    const market = card.getAttribute('data-market');
+    setMarket(market);
+    const marketSelect = document.getElementById('marketSelect');
+    marketSelect.classList.add('hide');
+    document.body.classList.remove('loading');
+    setTimeout(()=>{ marketSelect.classList.remove('active','hide'); }, 750);
+  });
+});
+const marketSwitchBtn = document.getElementById('marketSwitchBtn');
+if(marketSwitchBtn){
+  marketSwitchBtn.addEventListener('click',()=>{
+    document.getElementById('marketSelect').classList.add('active');
+    document.body.classList.add('loading');
+  });
+}
+
+const translations = {
+  "nav.services":{en:"Services",de:"Leistungen"},
+  "nav.process":{en:"Process",de:"Ablauf"},
+  "nav.why":{en:"Why Us",de:"Warum wir"},
+  "nav.expertise":{en:"Expertise",de:"Expertise"},
+  "nav.cta":{en:"Talk to Us",de:"Kontakt aufnehmen"},
+  "hero.eyebrow":{en:"PRECAST DETAILING FOR GERMAN PRECAST FACTORIES",de:"ELEMENTPLANUNG FÜR DEUTSCHE FERTIGTEILWERKE"},
+  "hero.h1.l1":{en:"THE DRAWING OFFICE",de:"DAS PLANUNGSBÜRO"},
+  "hero.h1.l2":{en:"BEHIND YOUR FACTORY.",de:"HINTER IHREM WERK."},
+  "hero.sub":{en:"Struktivo is an engineering and detailing partner to German precast factories. We turn your architectural and structural input into production-ready element plans, reinforcement plans and CNC data — without you adding headcount to the drawing office.",de:"Struktivo ist Ihr Engineering- und Detailing-Partner für die Betonfertigteilindustrie. Wir wandeln Ihre architektonischen und statischen Vorgaben in produktionsreife Elementpläne, Bewehrungspläne und CNC-Daten um — ohne dass Sie Ihr Planungsbüro personell aufstocken müssen."},
+  "hero.btn.talk":{en:"Talk to Us",de:"Kontakt aufnehmen"},
+  "hero.btn.process":{en:"See the Process",de:"Ablauf ansehen"},
+  "hero.badge":{en:"New partner? First revision is on us. Conditions apply.",de:"Neuer Partner? Die erste Revision geht auf uns. Es gelten Bedingungen."},
+  "hero.meta1.label":{en:"Element Plans / Day",de:"Elementpläne / Tag"},
+  "hero.meta2.label":{en:"Detailing Engineers",de:"Detailing-Ingenieure"},
+  "hero.meta3.label":{en:"Revision Turnaround",de:"Revisions-Durchlaufzeit"},
+  "hero.scroll":{en:"Scroll — 01 / 06",de:"Scrollen — 01 / 06"},
+  "statement.eyebrow":{en:"WHO WE WORK WITH",de:"FÜR WEN WIR ARBEITEN"},
+  "statement.heading":{en:"Struktivo doesn't cast concrete. <em>We draft the plans</em> your factory casts from — extra engineering capacity for drawing offices that can't keep pace with the order book.",de:"Struktivo gießt keinen Beton. <em>Wir zeichnen die Pläne,</em> nach denen Ihr Werk fertigt — zusätzliche Ingenieurskapazität für Planungsbüros, die mit dem Auftragsbuch nicht mehr Schritt halten."},
+  "statement.p1":{en:"Engineers trained on Allplan Precast and DiCAD Strakon. Every job enters as an architectural or structural set and leaves as a numbered, production-ready element plan.",de:"Unsere Ingenieure arbeiten mit Allplan Precast und DiCAD Strakon. Jeder Auftrag beginnt als Architektur- oder Statikunterlage und endet als nummerierter, produktionsreifer Elementplan."},
+  "statement.p2":{en:"Every project runs under NDA. Files are exchanged through a secured Microsoft Teams workspace or a protected Google Drive link — never by open email — and access is closed the day the project ends.",de:"Jedes Projekt läuft unter NDA. Der Datenaustausch erfolgt über einen gesicherten Microsoft-Teams-Arbeitsbereich oder einen geschützten Google-Drive-Link — nie per offener E-Mail — der Zugriff wird mit Projektende geschlossen."},
+  "process.eyebrow":{en:"HOW A JOB MOVES THROUGH THE DRAWING OFFICE",de:"SO LÄUFT EIN AUFTRAG DURCH UNSER BÜRO"},
+  "process.heading":{en:"Input to Element Plan,<br>in Five Stages.",de:"Vom Input zum Elementplan,<br>in fünf Schritten."},
+  "process.stagelabel":{en:"STAGE",de:"PHASE"},
+  "step1.title":{en:"Review",de:"Prüfung"},
+  "step1.desc":{en:"Architectural and structural input — plans, sections, statics — is checked against DIN 1045 / Eurocode 2 and your factory's own detailing standard before modeling starts.",de:"Architektur- und Statikunterlagen — Pläne, Schnitte, Berechnungen — werden vor Modellierungsbeginn gegen DIN 1045 / Eurocode 2 und Ihren werkseigenen Detailing-Standard geprüft."},
+  "step2.title":{en:"Model",de:"Modellierung"},
+  "step2.desc":{en:"A 3D precast model is built in Allplan Precast or DiCAD Strakon — matched to your production system, connections and tolerances.",de:"Wir erstellen ein 3D-Fertigteilmodell in Allplan Precast oder DiCAD Strakon — abgestimmt auf Ihr Produktionssystem, Ihre Anschlüsse und Toleranzen."},
+  "step3.title":{en:"Draft",de:"Planung"},
+  "step3.desc":{en:"Element plans and reinforcement plans are generated with piece numbering, embeds and connection details ready for the production floor.",de:"Elementpläne und Bewehrungspläne entstehen mit Stücknummerierung, Einbauteilen und Anschlussdetails — bereit für die Produktion."},
+  "step4.title":{en:"Coordinate",de:"Abstimmung"},
+  "step4.desc":{en:"Clash checks, RFI loop and revision rounds run directly with your engineers — every sheet version-controlled and signed off before release.",de:"Kollisionsprüfung, Rückfragen und Revisionsrunden laufen direkt mit Ihren Ingenieuren — jedes Blatt versioniert und freigegeben vor Übergabe."},
+  "step5.title":{en:"Release",de:"Freigabe"},
+  "step5.desc":{en:"CNC and BVBS data for rebar bending, cutting lists and bills of material are exported straight into your factory's production and ERP system.",de:"CNC- und BVBS-Daten für die Bewehrungsbiegung, Schneidlisten und Stücklisten werden direkt in Ihr Produktions- und ERP-System exportiert."},
+  "capabilities.eyebrow":{en:"WHAT WE DRAFT",de:"WAS WIR PLANEN"},
+  "capabilities.heading":{en:"Six Services. One Drawing Office.",de:"Sechs Leistungen. Ein Planungsbüro."},
+  "capabilities.subtext":{en:"Every service runs on the same review-and-QS process — scaled to your factory's software, standards and piece library.",de:"Jede Leistung folgt demselben Prüf- und QS-Prozess — abgestimmt auf die Software, Standards und Bauteilbibliothek Ihres Werks."},
+  "cap1.desc":{en:"Wall, slab and Doppelwand element shop drawings with piece numbering, ready for the casting bed.",de:"Wand-, Decken- und Doppelwandpläne mit Stücknummerierung — bereit für das Schalbett."},
+  "cap2.desc":{en:"Reinforcement drawings and bar schedules, checked against DIN 1045-1 / Eurocode 2 tolerances.",de:"Bewehrungszeichnungen und Stahllisten, geprüft nach DIN 1045-1 / Eurocode 2."},
+  "cap3.desc":{en:"Formwork and mold layout drawings matched to your factory's existing tooling and pallet system.",de:"Schalungs- und Formenpläne, abgestimmt auf die vorhandene Schalungs- und Palettentechnik Ihres Werks."},
+  "cap4.title":{en:"BIM Coordination",de:"BIM-Koordination"},
+  "cap4.desc":{en:"Your Allplan Precast model checked and coordinated against the architect's and MEP's federated model, clash by clash.",de:"Ihr Allplan-Precast-Modell wird mit dem Architektur- und TGA-Modell abgeglichen und auf Kollisionen geprüft."},
+  "cap5.desc":{en:"Bending schedules and BVBS export files generated straight for your rebar-bending and CNC machines.",de:"Biegelisten und BVBS-Exportdateien, direkt einsetzbar an Ihren Biege- und CNC-Anlagen."},
+  "cap6.title":{en:"Bills of Material",de:"Stücklisten & Mengen"},
+  "cap6.desc":{en:"Quantity take-offs and bills of material tied directly to each drawing revision for costing and procurement.",de:"Mengenermittlung und Stücklisten, direkt verknüpft mit jeder Planrevision — für Kalkulation und Einkauf."},
+  "stats.tile1.label":{en:"Element Plans / Day",de:"Elementpläne / Tag"},
+  "stats.tile2.label":{en:"Detailing Engineers",de:"Detailing-Ingenieure"},
+  "stats.tile3.label":{en:"Revision Turnaround",de:"Revisions-Durchlaufzeit"},
+  "stats.tile4.title":{en:"Be Our First Partner",de:"Werden Sie unser erster Partner"},
+  "stats.tile4.desc":{en:"We're onboarding pilot projects now — let's talk.",de:"Wir nehmen jetzt Pilotprojekte an — sprechen Sie mit uns."},
+  "stats.tile4.link":{en:"Get in touch →",de:"Kontakt aufnehmen →"},
+  "why.eyebrow":{en:"WHY FACTORIES OUTSOURCE HERE",de:"WARUM WERKE MIT UNS ARBEITEN"},
+  "why1.title":{en:"Spare Drafting Capacity, On Demand",de:"Zusätzliche Planungskapazität nach Bedarf"},
+  "why1.desc":{en:"Order-book overflow absorbed without you hiring or training a second detailing team.",de:"Auftragsspitzen abfangen, ohne ein zweites Planungsteam aufzubauen oder einzuarbeiten."},
+  "why2.title":{en:"Allplan Precast & Strakon Trained",de:"Geschult in Allplan Precast & Strakon"},
+  "why2.desc":{en:"Engineers work natively in your factory's own precast software and drawing templates.",de:"Unsere Ingenieure arbeiten direkt in der Software und den Zeichnungsvorlagen Ihres Werks."},
+  "why3.title":{en:"DIN / Eurocode Aligned QS",de:"Qualitätssicherung nach DIN / Eurocode"},
+  "why3.desc":{en:"Every element plan and reinforcement plan checked and signed off before it reaches your floor.",de:"Jeder Element- und Bewehrungsplan wird geprüft und freigegeben, bevor er Ihre Produktion erreicht."},
+  "why4.title":{en:"Time-Zone Overlap",de:"Überschneidende Arbeitszeiten"},
+  "why4.desc":{en:"India–Germany working hours overlap enough for same-day RFI and revision turnaround.",de:"Die Arbeitszeiten zwischen Indien und Deutschland überschneiden sich ausreichend für Rückfragen und Revisionen am gleichen Tag."},
+  "why5.title":{en:"Experienced Drafters & Modelers",de:"Erfahrene Zeichner & Modellierer"},
+  "why5.desc":{en:"Every drafter and modeler on our team brings 5+ years of precast detailing experience and deep familiarity with German standards, drawing conventions and factory workflows — you hand off a project, not a training program.",de:"Jeder Zeichner und Modellierer in unserem Team bringt mehr als 5 Jahre Erfahrung in der Fertigteilplanung mit und ist mit deutschen Normen, Zeichenkonventionen und Werksstandards bestens vertraut — Sie übergeben ein Projekt, kein Trainingsprogramm."},
+  "why.tolerance":{en:"TOLERANCE ±2MM",de:"TOLERANZ ±2MM"},
+  "expertise.eyebrow":{en:"AREAS OF EXPERTISE",de:"EXPERTISE-BEREICHE"},
+  "expertise.heading":{en:"What We're Built For.",de:"Wofür wir aufgestellt sind."},
+  "expertise.subtext":{en:"Representative detailing scopes we're set up to deliver — precise geometry, clean reinforcement, production-ready output.",de:"Beispielhafte Planungsumfänge, für die wir aufgestellt sind — präzise Geometrie, saubere Bewehrung, produktionsreife Ergebnisse."},
+  "exp1.title":{en:"Wall & Doppelwand Elements",de:"Wand- & Doppelwandelemente"},
+  "exp1.desc":{en:"Precise geometry and piece numbering for load-bearing and sandwich wall panels.",de:"Präzise Geometrie und Stücknummerierung für tragende Wand- und Sandwichelemente."},
+  "exp2.title":{en:"Reinforcement Detailing",de:"Bewehrungsdetails"},
+  "exp2.desc":{en:"Clean, code-checked bar placement and schedules for every element.",de:"Saubere, normgeprüfte Bewehrungsführung und Stahllisten für jedes Element."},
+  "exp3.title":{en:"Columns & Beams",de:"Stützen & Träger"},
+  "exp3.desc":{en:"Structural precast detailed to span, load and connection requirements.",de:"Statische Fertigteile, detailliert nach Spannweite, Last und Anschluss."},
+  "exp4.title":{en:"Precast Staircases",de:"Fertigteiltreppen"},
+  "exp4.desc":{en:"Flight and landing geometry detailed to riser/tread tolerance.",de:"Lauf- und Podestgeometrie mit exakter Steigungs- und Auftrittstoleranz."},
+  "exp5.title":{en:"Formwork Layout",de:"Schalungspläne"},
+  "exp5.desc":{en:"Mold and pallet layouts matched to your existing tooling.",de:"Schalungs- und Palettenpläne, abgestimmt auf Ihre vorhandene Technik."},
+  "exp6.title":{en:"Facade & Sunshade Elements",de:"Fassaden- & Sonnenschutzelemente"},
+  "exp6.desc":{en:"Architectural precast detailed to elevation and finish drawing.",de:"Architektonische Fertigteile nach Ansichts- und Oberflächenplan."},
+  "cta.heading":{en:"Send the input.<br>Get an <em>element plan.</em>",de:"Schicken Sie uns den Input.<br>Erhalten Sie einen <em>Elementplan.</em>"},
+  "cta.subtext":{en:"Your first revision is on us — a no-risk way to see how we work. Conditions apply.",de:"Ihre erste Revision geht auf uns — ein risikofreier Einstieg in die Zusammenarbeit. Es gelten Bedingungen."},
+  "cta.button":{en:"Talk to Us",de:"Kontakt aufnehmen"},
+  "route.germany":{en:"GERMANY",de:"DEUTSCHLAND"},
+  "route.india":{en:"INDIA",de:"INDIEN"},
+  "footer.tagline":{en:"Precast detailing and engineering partner to German precast factories. Input to element plan, on your template.",de:"Ihr Engineering- und Detailing-Partner für die Betonfertigteilindustrie. Vom Input zum Elementplan — in Ihrer Vorlage."},
+  "footer.sitemap_label":{en:"Sitemap",de:"Übersicht"},
+  "footer.contact_label":{en:"Contact",de:"Kontakt"},
+  "footer.hours":{en:"Mon–Fri, 09:00–18:00 IST",de:"Mo–Fr, 09:00–18:00 Uhr IST"}
+};
+
+let currentLang = 'de';
+
+function setLanguage(lang){
+  currentLang = lang;
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const key = el.getAttribute('data-i18n');
+    if(translations[key]) el.textContent = translations[key][lang];
+  });
+  document.querySelectorAll('[data-i18n-html]').forEach(el=>{
+    const key = el.getAttribute('data-i18n-html');
+    if(translations[key]) el.innerHTML = translations[key][lang];
+  });
+  document.querySelectorAll('.lang-toggle button').forEach(b=>{
+    b.classList.toggle('active', b.getAttribute('data-lang')===lang);
+  });
+  const activeStep = document.querySelector('.step.active');
+  if(activeStep){
+    document.getElementById('stageName').textContent = activeStep.getAttribute('data-name-'+lang);
+  }
+}
+document.querySelectorAll('.lang-toggle button').forEach(btn=>{
+  btn.addEventListener('click',()=>setLanguage(btn.getAttribute('data-lang')));
+});
+setLanguage('de');
+
+// ---------- touch detection ----------
+const isTouch = matchMedia('(pointer:coarse)').matches;
+if(isTouch){ document.body.classList.add('touch'); }
+
+// ---------- custom cursor ----------
+if(!isTouch){
+  const dot = document.getElementById('cursorDot');
+  const ring = document.getElementById('cursorRing');
+  const label = document.getElementById('cursorLabel');
+  const coord = document.getElementById('cursorCoord');
+  let mx=0,my=0,rx=0,ry=0;
+  window.addEventListener('mousemove',e=>{
+    mx=e.clientX; my=e.clientY;
+    dot.style.transform=`translate(${mx}px,${my}px) translate(-50%,-50%)`;
+    coord.style.transform=`translate(${mx}px,${my}px) translate(16px,16px)`;
+    coord.textContent = `X ${mx.toString().padStart(4,'0')}  Y ${my.toString().padStart(4,'0')}`;
+  });
+  function loop(){
+    rx += (mx-rx)*0.16;
+    ry += (my-ry)*0.16;
+    ring.style.transform=`translate(${rx}px,${ry}px) translate(-50%,-50%)`;
+    requestAnimationFrame(loop);
+  }
+  loop();
+
+  document.querySelectorAll('.hover-target, a, button').forEach(el=>{
+    el.addEventListener('mouseenter',()=>{
+      ring.classList.add('hovering');
+      label.textContent = el.getAttribute('data-cursor') || 'OPEN';
+    });
+    el.addEventListener('mouseleave',()=>{
+      ring.classList.remove('hovering');
+      label.textContent='';
+    });
+  });
+
+  const darkSections = document.querySelectorAll('.process, .expertise, footer, .marquee-section');
+  const cursorObserver = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){ document.body.classList.add('on-dark'); }
+    });
+  },{threshold:0.6});
+  darkSections.forEach(s=>cursorObserver.observe(s));
+  const lightObserver = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      if(entry.isIntersecting){ document.body.classList.remove('on-dark'); }
+    });
+  },{threshold:0.6});
+  document.querySelectorAll('.hero, .statement, .capabilities, .stats, .why, .cta-section').forEach(s=>lightObserver.observe(s));
+}
+
+// ---------- nav scroll state ----------
+const nav = document.getElementById('siteNav');
+window.addEventListener('scroll',()=>{
+  nav.classList.toggle('scrolled', window.scrollY>40);
+});
+
+// ---------- scroll progress ----------
+const progressFill = document.getElementById('progressFill');
+function updateProgress(){
+  const h = document.documentElement;
+  const scrolled = (h.scrollTop || document.body.scrollTop);
+  const height = h.scrollHeight - h.clientHeight;
+  progressFill.style.width = (scrolled/height*100)+'%';
+}
+window.addEventListener('scroll', updateProgress);
+
+// ---------- reveal on scroll ----------
+const revealObserver = new IntersectionObserver((entries)=>{
+  entries.forEach(entry=>{
+    if(entry.isIntersecting){ entry.target.classList.add('in-view'); }
+  });
+},{threshold:0.15});
+document.querySelectorAll('[data-reveal]').forEach(el=>revealObserver.observe(el));
+
+// ---------- hero parallax ----------
+const panelWrap = document.querySelector('.panel-wrap');
+window.addEventListener('scroll',()=>{
+  const y = window.scrollY;
+  if(panelWrap && y < window.innerHeight){
+    panelWrap.style.transform = `translateY(${y*0.18}px) rotate(${y*0.01}deg)`;
+  }
+});
+
+// ---------- process scrollytelling ----------
+const steps = document.querySelectorAll('.step');
+const stageBig = document.getElementById('stageBig');
+const stageName = document.getElementById('stageName');
+const stageBar = document.getElementById('stageBar');
+const stepObserver = new IntersectionObserver((entries)=>{
+  entries.forEach(entry=>{
+    if(entry.isIntersecting){
+      steps.forEach(s=>s.classList.remove('active'));
+      entry.target.classList.add('active');
+      const stage = entry.target.getAttribute('data-stage');
+      stageBig.textContent = stage;
+      stageName.textContent = entry.target.getAttribute('data-name-'+currentLang);
+      stageBar.style.width = (parseInt(stage)/5*100)+'%';
+    }
+  });
+},{threshold:0.6, rootMargin:'-20% 0px -20% 0px'});
+steps.forEach(s=>stepObserver.observe(s));
+
+// ---------- count-up stats ----------
+const statNums = document.querySelectorAll('[data-count]');
+const countObserver = new IntersectionObserver((entries)=>{
+  entries.forEach(entry=>{
+    if(entry.isIntersecting){
+      const el = entry.target;
+      const target = parseInt(el.getAttribute('data-count'));
+      const suffix = el.getAttribute('data-suffix') || '';
+      let current = 0;
+      const duration = 1400;
+      const startTime = performance.now();
+      function tick(now){
+        const progress = Math.min((now-startTime)/duration,1);
+        const eased = 1 - Math.pow(1-progress,3);
+        current = Math.floor(eased*target);
+        el.textContent = current.toLocaleString('en-IN')+suffix;
+        if(progress<1){ requestAnimationFrame(tick); }
+        else{ el.textContent = target.toLocaleString('en-IN')+suffix; }
+      }
+      requestAnimationFrame(tick);
+      countObserver.unobserve(el);
+    }
+  });
+},{threshold:0.5});
+statNums.forEach(el=>countObserver.observe(el));
+</script>
+
+</body>
+</html>
